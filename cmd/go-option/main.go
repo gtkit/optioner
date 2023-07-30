@@ -17,10 +17,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/chenmingyong0423/gkit/stringx"
-	"github.com/chenmingyong0423/go-optioner/options"
+	"github.com/gtkit/optioner/options"
 	"log"
 	"os"
+	"strings"
 )
 
 var (
@@ -46,7 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 	g.StructInfo.StructName = *structTypeNameArg
-	g.StructInfo.NewStructName = stringx.BigCamelToSmallCamel(*structTypeNameArg)
+	g.StructInfo.NewStructName = BigCamelToSmallCamel(*structTypeNameArg)
 	g.SetOutPath(outputArg)
 
 	g.GeneratingOptions()
@@ -57,4 +57,15 @@ func main() {
 
 	g.GenerateCodeByTemplate()
 	g.OutputToFile()
+}
+
+// BigCamelToSmallCamel 大驼峰格式的字符串转小驼峰格式的字符串
+// UserAgent → userAgent
+func BigCamelToSmallCamel(bigCamel string) string {
+	if len(bigCamel) == 0 {
+		return ""
+	}
+
+	firstChar := strings.ToLower(string(bigCamel[0]))
+	return firstChar + bigCamel[1:]
 }

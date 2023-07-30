@@ -21,16 +21,18 @@ const OptionsTemplateCode = `
 
 package {{ .PackageName }}
 
-type {{ .StructName }}Option func(*{{ .StructName }})
+type {{ .StructName }}Option interface {
+	apply(*{{ .StructName }})
+}
 
-func New{{ .StructName }}({{ range $index, $field := .Fields }}{{ $field.Name | bigCamelToSmallCamel }} {{ $field.Type }},{{ end }} opts ...{{ .StructName }}Option) *{{ .StructName }} {
+func New{{ .StructName }}({{ range $index, $field := .Fields }}{{ $field.Name | bigCamelToSmallCamel }} {{ $field.Type }},{{ end }} opts ...{{ $.StructName }}Option) *{{ .StructName }} {
 	{{ .NewStructName }} := &{{ .StructName }}{
 		{{ range $index, $field := .Fields }}{{ $field.Name }}: {{ $field.Name | bigCamelToSmallCamel }},
 		{{ end }}
 	}
 
 	for _, opt := range opts {
-		opt({{ .NewStructName }})
+		opt.apply({{ .NewStructName }})
 	}
 
 	return {{ .NewStructName }}
@@ -38,11 +40,20 @@ func New{{ .StructName }}({{ range $index, $field := .Fields }}{{ $field.Name | 
 
 {{ if .OptionalFields }}
 {{ range $field := .OptionalFields }}
-func With{{ $field.Name }}({{ $field.Name | bigCamelToSmallCamel }} {{ $field.Type }}) {{ $.StructName }}Option {
-	return func({{ $.NewStructName }} *{{ $.StructName }}) {
-		{{ $.NewStructName }}.{{ $field.Name }} = {{ $field.Name | bigCamelToSmallCamel }}
-	}
+
+type {{ $field.Name | bigCamelToSmallCamel }} struct {
+	{{ $field.Name | bigCamelToSmallCamel }} {{ $field.Type }}
 }
+
+func ({{ $field.Name | lowerFirst }} {{ $field.Name | bigCamelToSmallCamel }}) apply (opt *{{ $.StructName }}) {
+	opt.{{ $field.Name }} = {{ $field.Name | lowerFirst }}.{{ $field.Name | bigCamelToSmallCamel }}
+}
+
+func With{{ $field.Name }}({{ $field.Name | lowerFirst }} {{ $field.Type }}) {{ $.StructName }}Option {
+	return {{ $field.Name | bigCamelToSmallCamel }}{ {{ $field.Name | bigCamelToSmallCamel }}: {{ $field.Name | lowerFirst }} }
+}
+
+
 {{ end }}
 {{ end }}
 `

@@ -17,8 +17,7 @@ package options
 import (
 	"bytes"
 	"fmt"
-	"github.com/chenmingyong0423/gkit/stringx"
-	"github.com/chenmingyong0423/go-optioner/templates"
+	"github.com/gtkit/optioner/templates"
 	"go/ast"
 	"go/build"
 	"go/format"
@@ -29,6 +28,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"unicode"
 )
 
 type Generator struct {
@@ -136,7 +136,10 @@ func (g *Generator) parseStruct(fileName string) bool {
 }
 
 func (g *Generator) GenerateCodeByTemplate() {
-	tmpl, err := template.New("options").Funcs(template.FuncMap{"bigCamelToSmallCamel": stringx.BigCamelToSmallCamel}).Parse(templates.OptionsTemplateCode)
+	tmpl, err := template.New("options").Funcs(template.FuncMap{
+		"bigCamelToSmallCamel": BigCamelToSmallCamel,
+		"lowerFirst":           LowerFirst,
+	}).Parse(templates.OptionsTemplateCode)
 	if err != nil {
 		fmt.Println("Failed to parse template:", err)
 		os.Exit(1)
@@ -169,6 +172,32 @@ func (g *Generator) SetOutPath(outPath *string) {
 	if len(*outPath) > 0 {
 		g.outPath = *outPath
 	} else {
-		g.outPath = fmt.Sprintf("opt_%s_gen.go", stringx.CamelToSnake(g.StructInfo.StructName))
+		g.outPath = fmt.Sprintf("opt_%s_gen.go", CamelToSnake(g.StructInfo.StructName))
 	}
+}
+
+func LowerFirst(s string) string {
+	return strings.ToLower(string(s[0]))
+}
+
+func CamelToSnake(camelCase string) string {
+	var result strings.Builder
+	for i, c := range camelCase {
+		if unicode.IsUpper(c) && i > 0 {
+			result.WriteByte('_')
+		}
+		result.WriteRune(unicode.ToLower(c))
+	}
+	return result.String()
+}
+
+// BigCamelToSmallCamel 大驼峰格式的字符串转小驼峰格式的字符串
+// UserAgent → userAgent
+func BigCamelToSmallCamel(bigCamel string) string {
+	if len(bigCamel) == 0 {
+		return ""
+	}
+
+	firstChar := strings.ToLower(string(bigCamel[0]))
+	return firstChar + bigCamel[1:]
 }
