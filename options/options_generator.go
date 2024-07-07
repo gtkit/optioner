@@ -113,38 +113,44 @@ func (g *Generator) parseStruct(fileName string) bool {
 					switch field.Type.(type) {
 					case *ast.Ident:
 						fieldType = field.Type.(*ast.Ident).Name
-						fmt.Println("---field.Type.(*ast.Ident)---", field.Type.(*ast.Ident).Name, "----", field.Names[0].Name)
+						log.Println("---field.Type.(*ast.Ident)---", field.Type.(*ast.Ident).Name, "----", field.Names[0].Name)
 					case *ast.SelectorExpr:
 						fieldType = field.Type.(*ast.SelectorExpr).X.(*ast.Ident).Name + "." + field.Type.(*ast.SelectorExpr).Sel.Name
-						fmt.Println("---field.Type.(*ast.SelectorExpr).Sel---", field.Type.(*ast.SelectorExpr).Sel, "----", field.Names[0].Name)
-						fmt.Println("---field.Type.(*ast.SelectorExpr).Sel.Obj---", field.Type.(*ast.SelectorExpr).X.(*ast.Ident).Name, "----", field.Names[0].Name)
+						log.Println("---field.Type.(*ast.SelectorExpr).Sel---", field.Type.(*ast.SelectorExpr).Sel, "----", field.Names[0].Name)
+						log.Println("---field.Type.(*ast.SelectorExpr).Sel.Obj---", field.Type.(*ast.SelectorExpr).X.(*ast.Ident).Name, "----", field.Names[0].Name)
 					case *ast.StarExpr:
-						fieldType = "*" + field.Type.(*ast.StarExpr).X.(*ast.Ident).Name
-						fmt.Println("---field.Type.(*ast.StarExpr).X---", field.Type.(*ast.StarExpr).X, "----", field.Names[0].Name)
+						if ft, ok := field.Type.(*ast.StarExpr).X.(*ast.Ident); ok {
+							fieldType = "*" + ft.Name
+						}
+						if ft, ok := field.Type.(*ast.StarExpr).X.(*ast.SelectorExpr); ok {
+							fieldType = "*" + ft.Sel.Name
+						}
+
+						log.Println("---field.Type.(*ast.StarExpr).X---", field.Type.(*ast.StarExpr).X, "----", field.Names[0].Name)
 					case *ast.ArrayType:
 						fieldType = field.Type.(*ast.ArrayType).Elt.(*ast.Ident).Name
-						fmt.Println("---field.Type.(*ast.ArrayType).Elt---", field.Type.(*ast.ArrayType).Elt, "----", field.Names[0].Name)
+						log.Println("---field.Type.(*ast.ArrayType).Elt---", field.Type.(*ast.ArrayType).Elt, "----", field.Names[0].Name)
 					case *ast.MapType:
 						fieldType = field.Type.(*ast.MapType).Key.(*ast.Ident).Name
-						fmt.Println("---field.Type.(*ast.MapType).Key---", field.Type.(*ast.MapType).Key, "----", field.Names[0].Name)
+						log.Println("---field.Type.(*ast.MapType).Key---", field.Type.(*ast.MapType).Key, "----", field.Names[0].Name)
 					case *ast.ChanType:
 						fieldType = "chan " + field.Type.(*ast.ChanType).Value.(*ast.Ident).Name
-						fmt.Println("---field.Type.(*ast.ChanType).Value---", field.Type.(*ast.ChanType).Value, "----", field.Names[0].Name)
+						log.Println("---field.Type.(*ast.ChanType).Value---", field.Type.(*ast.ChanType).Value, "----", field.Names[0].Name)
 					case *ast.FuncType:
 						fieldType = field.Type.(*ast.FuncType).Params.List[0].Type.(*ast.Ident).Name
-						fmt.Println("---field.Type.(*ast.FuncType).Params.List[0].Type---", field.Type.(*ast.FuncType).Params.List[0], "----", field.Names[0].Name)
+						log.Println("---field.Type.(*ast.FuncType).Params.List[0].Type---", field.Type.(*ast.FuncType).Params.List[0], "----", field.Names[0].Name)
 					case *ast.InterfaceType:
 						fieldType = field.Type.(*ast.InterfaceType).Methods.List[0].Type.(*ast.Ident).Name
-						fmt.Println("---field.Type.(*ast.InterfaceType).Methods.List[0].Type---", field.Type.(*ast.InterfaceType).Methods.List[0], "----", field.Names[0].Name)
+						log.Println("---field.Type.(*ast.InterfaceType).Methods.List[0].Type---", field.Type.(*ast.InterfaceType).Methods.List[0], "----", field.Names[0].Name)
 					case *ast.StructType:
 						fieldType = field.Type.(*ast.StructType).Fields.List[0].Type.(*ast.Ident).Name
-						fmt.Println("---field.Type.(*ast.StructType).Fields.List[0].Type---", field.Type.(*ast.StructType).Fields.List[0], "----", field.Names[0].Name)
+						log.Println("---field.Type.(*ast.StructType).Fields.List[0].Type---", field.Type.(*ast.StructType).Fields.List[0], "----", field.Names[0].Name)
 					case *ast.Ellipsis:
 						fieldType = field.Type.(*ast.Ellipsis).Elt.(*ast.Ident).Name
-						fmt.Println("---field.Type.(*ast.Ellipsis).Elt---", field.Type.(*ast.Ellipsis).Elt, "----", field.Names[0].Name)
+						log.Println("---field.Type.(*ast.Ellipsis).Elt---", field.Type.(*ast.Ellipsis).Elt, "----", field.Names[0].Name)
 					case *ast.CallExpr:
 						fieldType = field.Type.(*ast.CallExpr).Fun.(*ast.Ident).Name
-						fmt.Println("---field.Type.(*ast.CallExpr).Fun---", field.Type.(*ast.CallExpr).Fun, "----", field.Names[0].Name)
+						log.Println("---field.Type.(*ast.CallExpr).Fun---", field.Type.(*ast.CallExpr).Fun, "----", field.Names[0].Name)
 					default:
 						log.Fatal(fmt.Sprintf("Target[%s] type is not a struct", g.StructInfo.StructName))
 
@@ -184,7 +190,7 @@ func (g *Generator) GenerateCodeByTemplate() {
 		"lowerFirst":           LowerFirst,
 	}).Parse(templates.OptionsTemplateCode)
 	if err != nil {
-		fmt.Println("Failed to parse template:", err)
+		log.Println("Failed to parse template:", err)
 		os.Exit(1)
 	}
 
@@ -200,7 +206,7 @@ func (g *Generator) OutputToFile() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Generating Functional Options Code Successful.\nOut: %s\n", g.outPath)
+	log.Printf("Generating Functional Options Code Successful.\nOut: %s\n", g.outPath)
 }
 
 func (g *Generator) forMart() []byte {
