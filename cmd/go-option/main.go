@@ -17,10 +17,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/gtkit/optioner/options"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/gtkit/optioner/options"
 )
 
 var (
